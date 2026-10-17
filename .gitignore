@@ -1,6 +1,1 @@
-data/
-.venv/
-Claude.dmg
-__pycache__/
-.env
-*.db*
+.DS_Store
