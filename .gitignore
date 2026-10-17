@@ -1,0 +1,6 @@
+data/
+.venv/
+Claude.dmg
+__pycache__/
+.env
+*.db*

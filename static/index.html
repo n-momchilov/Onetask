@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="One Thing">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f6f5f0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121211" media="(prefers-color-scheme: dark)">
+<title>One Thing</title>
+<style>
+:root{--bg:#f6f5f0;--fg:#1a1a16;--mute:#73736a;--card:#ffffff;--line:#e3e1d8;--accent:#2563eb;--ok:#16a34a;--late:#dc2626;--uni:#7c3aed;--life:#0e7490;--side:#d97706;--xp:#f59e0b}
+@media (prefers-color-scheme:dark){:root{--bg:#121211;--fg:#edede7;--mute:#9a9a90;--card:#1c1c1a;--line:#2d2d29;--accent:#60a5fa;--ok:#22c55e;--late:#f87171;--uni:#a78bfa;--life:#22d3ee;--side:#fbbf24;--xp:#fbbf24}}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:560px;background:var(--bg);color:var(--fg);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:0 16px 120px}
+header{display:flex;align-items:baseline;justify-content:space-between;padding:calc(14px + env(safe-area-inset-top)) 0 6px}
+h1{font-size:20px;margin:0;letter-spacing:-.01em}
+.pill{font-size:14px;color:var(--mute);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:0 0 16px}
+.bar i{display:block;height:100%;width:0;background:var(--xp);transition:width .4s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card.pick{display:flex;gap:12px;align-items:flex-start;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
+.card.pick .box{flex:0 0 30px;height:30px;border-radius:9px;border:2px solid var(--line);display:grid;place-items:center;font-size:17px;margin-top:2px}
+.card.pick.done .box{background:var(--ok);border-color:var(--ok);color:#fff}
+.card.pick.done .t{text-decoration:line-through;color:var(--mute)}
+.t{font-size:18px;font-weight:600;line-height:1.3}
+.why{font-size:13px;color:var(--mute);margin-top:5px}
+.kind{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.kind.uni{color:var(--uni)}.kind.life{color:var(--life)}.kind.side{color:var(--side)}
+.chip{font-size:12px;color:var(--mute);margin-left:6px;font-weight:500}
+.chip.late{color:var(--late);font-weight:700}
+button{font:inherit;border:0;border-radius:10px;padding:10px 14px;background:var(--accent);color:#fff;cursor:pointer}
+button.ghost{background:transparent;color:var(--mute);padding:6px 8px}
+button.big{width:100%;padding:14px;font-size:17px;font-weight:600;margin:4px 0 12px}
+label.opt{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+label.opt input{width:20px;height:20px;margin:0;flex:0 0 20px}
+label.small{display:block;font-size:13px;color:var(--mute);margin:10px 0}
+textarea,input[type=text]{font:inherit;width:100%;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--card);color:var(--fg);margin-top:4px}
+#capture{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}
+#capture form{display:flex;gap:8px;max-width:560px;margin:auto}
+#capture input{flex:1;margin:0}
+details{margin:6px 0}
+summary{cursor:pointer;color:var(--mute);font-weight:600;padding:8px 0}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.row .t{font-size:15px;font-weight:500;flex:1}
+.muted{color:var(--mute);font-size:14px}
+.win{display:flex;gap:10px;padding:6px 0;font-size:14px;border-top:1px solid var(--line)}
+.win b{font-variant-numeric:tabular-nums;color:var(--mute);min-width:44px;font-weight:600}
+.toast{position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+code{font-size:12px;word-break:break-all;user-select:all;-webkit-user-select:all}
+p.small{font-size:13px;color:var(--mute)}
+</style>
+</head>
+<body>
+<header><h1>One Thing</h1><span class="pill" id="pill"></span></header>
+<div class="bar"><i id="xpbar"></i></div>
+<main id="app"><p class="muted">Loading…</p></main>
+<details><summary>Everything (<span id="inboxCount">0</span>)</summary><div id="inbox"></div></details>
+<details><summary>Settings</summary>
+  <div id="goals"></div>
+  <div id="urls"></div>
+  <button class="ghost" onclick="importNow()">Import calendar now</button>
+  <button class="ghost" onclick="localStorage.removeItem('ot_token');location.reload()">Forget token</button>
+</details>
+<div id="capture"><form id="cap"><input type="text" id="capIn" placeholder="uni: finish report due fri" autocomplete="off" enterkeyhint="send"><button type="submit">Add</button></form></div>
+<div class="toast" id="toast"></div>
+<script>
+const KINDS=['uni','life','side'];
+const KIND_LABEL={uni:'Uni',life:'Life',side:'Side project'};
+const XP={uni:30,side:20,life:10};
+const DAY_BONUS=20;
+let token=new URL(location.href).searchParams.get('token')||localStorage.getItem('ot_token')||'';
+if(token){localStorage.setItem('ot_token',token);if(location.search)history.replaceState(null,'',location.pathname);}
+let state=null,repick=false;const showAll={};
+
+async function api(path,opts={}){
+  const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json','X-Token':token}});
+  if(r.status===401){const t=prompt('Token for One Thing?');if(!t)throw new Error('No token');token=t;localStorage.setItem('ot_token',t);return api(path,opts);}
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+const h=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._x);t._x=setTimeout(()=>t.classList.remove('show'),1600);}
+function dueChip(t){
+  if(!t.due)return'';
+  const d=new Date(t.due+'T00:00:00'),base=new Date(state.day+'T00:00:00');
+  const diff=Math.round((d-base)/864e5);
+  const s=diff<0?`${-diff}d late`:diff===0?'today':diff===1?'tomorrow':diff<7?d.toLocaleDateString(undefined,{weekday:'short'}):t.due.slice(5);
+  return`<span class="chip ${diff<0?'late':''}">${h(s)}</span>`;
+}
+
+async function load(){state=await api('/api/today');render();}
+
+function render(){
+  const s=state;
+  document.getElementById('pill').textContent=`🔥 ${s.streak} · Lv ${s.level} · ${s.xp} xp`;
+  document.getElementById('xpbar').style.width=Math.min(100,(s.xp-s.level_floor)/(s.level_next-s.level_floor)*100)+'%';
+  document.getElementById('app').innerHTML=(s.picks.length&&!repick)?renderToday(s):renderPick(s);
+  document.getElementById('inboxCount').textContent=s.inbox_count;
+  renderInbox(s);renderSettings(s);
+}
+
+function renderToday(s){
+  let html=s.picks.map(t=>`<div class="card pick ${t.done?'done':''}" onclick="toggle(${t.id},${t.done})">
+    <div class="box">${t.done?'✓':''}</div>
+    <div><div class="kind ${t.kind}">${KIND_LABEL[t.kind]} · ${XP[t.kind]} xp</div>
+      <div class="t">${h(t.title)}${dueChip(t)}</div>
+      <div class="why">${h(s.goals[t.kind])}</div></div></div>`).join('');
+  const left=s.picks.filter(t=>!t.done).length;
+  if(s.closed)html+=`<p class="muted">Day closed${s.note?' — “'+h(s.note)+'”':''}. <button class="ghost" onclick="repick=true;render()">change picks</button></p>`;
+  else if(left)html+=`<p class="muted">${left} left. <button class="ghost" onclick="repick=true;render()">change picks</button></p>`;
+  else html+=`<p class="muted">All done 🎉 Close the day for +${DAY_BONUS} xp.</p>`;
+  if(!s.closed)html+=`<button class="big" onclick="closeDay()">Close the day</button>`;
+  if(s.due_soon.length)html+=`<div class="card"><div class="kind">Due this week</div>${s.due_soon.map(t=>`<div class="row"><span class="kind ${t.kind}">${t.kind}</span><span class="t">${h(t.title)}</span>${dueChip(t)}</div>`).join('')}</div>`;
+  if(s.wins.length)html+=`<div class="card"><div class="kind">Last 7 days</div>${s.wins.map(w=>`<div class="win"><b>${h(w.day.slice(5))}</b><span>${'✅'.repeat(w.done)}${'○'.repeat(Math.max(0,w.picks-w.done))} ${h(w.note||'')}</span></div>`).join('')}</div>`;
+  return html;
+}
+
+function renderPick(s){
+  const open=s.tasks;
+  if(!open.length)return`<div class="card"><div class="t">Inbox is empty.</div>
+    <p class="muted">Brain-dump everything you're carrying, one per line. Prefix with <b>uni:</b> / <b>life:</b> / <b>side:</b>; add <b>due fri</b>, <b>due tomorrow</b> or <b>@2026-10-20</b> for dates. No prefix = life.</p>
+    <textarea id="dump" rows="7" placeholder="uni: finish report due fri&#10;side: deploy the bot&#10;call the bank"></textarea>
+    <button class="big" onclick="dump()">Add all</button></div>`;
+  const cur=new Set((s.picks||[]).map(t=>t.id));
+  // nothing picked yet → preselect the most urgent uni task so starting the day is one tap
+  if(!cur.size){const u=open.find(t=>t.kind==='uni');if(u)cur.add(u.id);}
+  let html=`<p class="muted">Pick today — one per lane. Skip a lane if nothing there matters today.</p>`;
+  for(const k of KINDS){
+    const all=open.filter(t=>t.kind===k);
+    if(!all.length)continue;
+    const list=showAll[k]?all:all.slice(0,3);
+    const hasCur=all.some(t=>cur.has(t.id));
+    html+=`<div class="card"><div class="kind ${k}">${KIND_LABEL[k]}</div><div class="why">${h(s.goals[k])}</div>
+      ${list.map(t=>`<label class="opt"><input type="radio" name="p_${k}" value="${t.id}" ${cur.has(t.id)?'checked':''}><span>${h(t.title)}${dueChip(t)}</span></label>`).join('')}
+      <label class="opt"><input type="radio" name="p_${k}" value="" ${hasCur?'':'checked'}><span class="muted">skip ${KIND_LABEL[k].toLowerCase()} today</span></label>
+      ${all.length>3&&!showAll[k]?`<button class="ghost" onclick="showAll['${k}']=true;render()">show all ${all.length}</button>`:''}</div>`;
+  }
+  html+=`<button class="big" onclick="startDay()">Start the day →</button>`;
+  return html;
+}
+
+function renderInbox(s){
+  const el=document.getElementById('inbox');
+  el.innerHTML=KINDS.map(k=>{
+    const ts=s.tasks.filter(t=>t.kind===k);
+    if(!ts.length)return'';
+    return`<div class="kind ${k}" style="margin-top:10px">${KIND_LABEL[k]} (${ts.length})</div>`+ts.map(t=>`<div class="row"><span class="t">${h(t.title)}${dueChip(t)}${t.source==='ics'?'<span class="chip">cal</span>':''}</span><button class="ghost" onclick="doneTask(${t.id})" title="done">✓</button><button class="ghost" onclick="delTask(${t.id})" title="delete">×</button></div>`).join('');
+  }).join('')||'<p class="muted">Nothing open.</p>';
+}
+
+function renderSettings(s){
+  const g=document.getElementById('goals');
+  if(!g.dataset.ready){
+    g.dataset.ready='1';
+    g.innerHTML=KINDS.map(k=>`<label class="small">${KIND_LABEL[k]} — why it matters (shown under every ${KIND_LABEL[k].toLowerCase()} task)<input type="text" id="why_${k}" value="${h(s.goals_set[k]||'')}" placeholder="e.g. graduate on time — this semester doesn't repeat"></label>`).join('')+`<button onclick="saveGoals()">Save</button>`;
+  }
+  const base=location.origin;
+  document.getElementById('urls').innerHTML=`
+    <p class="small">Pause shortcut — GET, show the result in an alert:<br><code>${base}/today.txt?token=${h(token)}</code></p>
+    <p class="small">Capture shortcut — POST JSON <code>{"text": "…"}</code> to:<br><code>${base}/api/capture?token=${h(token)}</code></p>
+    <p class="small">Calendar subscription (Apple Calendar / Outlook):<br><code>${base}/feed.ics?token=${h(token)}</code></p>`;
+}
+
+async function startDay(){
+  const ids=KINDS.map(k=>document.querySelector(`input[name=p_${k}]:checked`)?.value).filter(Boolean).map(Number);
+  if(!ids.length){toast('Pick at least one');return;}
+  state=await api('/api/pick',{method:'POST',body:JSON.stringify({task_ids:ids})});
+  repick=false;render();toast('Day started');
+}
+async function toggle(id,done){
+  const t=state.picks.find(x=>x.id===id);
+  state=await api(`/api/tasks/${id}/done?undo=${done}`,{method:'POST'});
+  render();if(!done&&t)toast(`+${XP[t.kind]} xp`);
+}
+async function closeDay(){
+  const note=prompt('One line — what moved today?');
+  if(note===null)return;
+  state=await api('/api/close',{method:'POST',body:JSON.stringify({note})});
+  render();toast(state.bonus?`Day closed · +${state.bonus} xp`:'Day closed');
+}
+async function dump(){
+  const text=document.getElementById('dump').value;
+  if(!text.trim())return;
+  const r=await api('/api/capture',{method:'POST',body:JSON.stringify({text})});
+  toast(`Added ${r.created.length}`);await load();
+}
+async function doneTask(id){await api(`/api/tasks/${id}/done`,{method:'POST'});await load();}
+async function delTask(id){if(!confirm('Delete this task?'))return;await api(`/api/tasks/${id}`,{method:'DELETE'});await load();}
+async function saveGoals(){
+  for(const k of KINDS){await api('/api/goals',{method:'PUT',body:JSON.stringify({kind:k,why:document.getElementById('why_'+k).value})});}
+  toast('Saved');await load();
+}
+async function importNow(){const r=await api('/api/import',{method:'POST'});toast(r.errors&&r.errors.length?r.errors[0]:`Imported ${r.imported} (${r.fetched} matched)`);await load();}
+document.getElementById('cap').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const i=document.getElementById('capIn');const text=i.value.trim();if(!text)return;
+  i.value='';
+  const r=await api('/api/capture',{method:'POST',body:JSON.stringify({text})});
+  toast(r.created.length?`Captured → ${r.created[0].kind}${r.created[0].due?' · due '+r.created[0].due:''}`:'Nothing captured');
+  await load();
+});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load().catch(()=>{});});
+load().catch(e=>{document.getElementById('app').innerHTML=`<p class="muted">${h(e.message)}</p>`;});
+</script>
+</body>
+</html>
